@@ -52,4 +52,4 @@ de Status a "Enviado/Error".
 
 - **Base de datos (solo lectura): https://airtable.com/appk7F3Ogd0HaVpx8/shrUVJIeISVf5SsL0
 - **Video demo (3 min):** https://drive.google.com/file/d/128c5UR5tr-8ocg5H5BVa5iteksjYpHBw/view?usp=sharing
-- **Dashboard de control (KPIs y tasa de errores): https://airtable.com/appk7F3Ogd0HaVpx8/shrUVJIeISVf5SsL0
+- **Dashboard de control (KPIs y tasa de errores): https://airtable.com/appk7F3Ogd0HaVpx8/shrBYHK0SafoMRUoP
