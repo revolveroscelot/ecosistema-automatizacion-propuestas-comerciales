@@ -1,0 +1,326 @@
+{
+  "name": "Flujo B - Aprobacion y Envio al Cliente",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableOAuth2Api",
+        "baseId": {
+          "__rl": true,
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tblU1d2J4s0ljUhMS/viwq2D3cVBVsdF3nI?blocks=hide",
+          "mode": "url"
+        },
+        "tableId": {
+          "__rl": true,
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tblU1d2J4s0ljUhMS/viwq2D3cVBVsdF3nI?blocks=hide",
+          "mode": "url"
+        },
+        "triggerField": "Status",
+        "additionalFields": {}
+      },
+      "id": "4e165ae8-fc2d-4620-aeef-16f5cb9c53e2",
+      "name": "Airtable Trigger - Cambios de Status",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        0
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "KUhYM55QGLkYVPIh",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{$json.fields.Status}}",
+              "rightValue": "Aprobado por humano",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d5676a1a-65d1-4f05-a210-5bfaaddde532",
+      "name": "IF - Esta Aprobado",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        144,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{$json.fields.Email_Cliente}}",
+        "subject": "=Tu propuesta comercial - {{$json.fields.Empresa}}",
+        "message": "={{$json.fields.Propuesta_generada}}",
+        "options": {}
+      },
+      "id": "4f637654-bdad-48e6-bc74-14f263c332d3",
+      "name": "Gmail - Enviar Propuesta al Cliente",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        384,
+        -80
+      ],
+      "webhookId": "5ed49589-5db3-498f-9205-62d129f6439a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qG1oin2apBabXyu5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tblU1d2J4s0ljUhMS/viwq2D3cVBVsdF3nI?blocks=hide",
+          "mode": "url"
+        },
+        "table": {
+          "__rl": true,
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tblU1d2J4s0ljUhMS/viwq2D3cVBVsdF3nI?blocks=hide",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Airtable Trigger - Cambios de Status').item.json.id }}",
+            "Status": "Enviado/Error"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre_Cliente",
+              "displayName": "Nombre_Cliente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Empresa",
+              "displayName": "Empresa",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Email_Cliente",
+              "displayName": "Email_Cliente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "servicio_solicitado",
+              "displayName": "servicio_solicitado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Descripcion_Necesidad",
+              "displayName": "Descripcion_Necesidad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "presupuesto_estimado",
+              "displayName": "presupuesto_estimado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendiente",
+                  "value": "Pendiente"
+                },
+                {
+                  "name": "Procesado por IA",
+                  "value": "Procesado por IA"
+                },
+                {
+                  "name": "Pendiente aprobación",
+                  "value": "Pendiente aprobación"
+                },
+                {
+                  "name": "Aprobado por humano",
+                  "value": "Aprobado por humano"
+                },
+                {
+                  "name": "Enviado/Error",
+                  "value": "Enviado/Error"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Propuesta_generada",
+              "displayName": "Propuesta_generada",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha_solicitud",
+              "displayName": "Fecha_solicitud",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "c2ef5d8d-d49a-4d49-af11-030ba19a4d2b",
+      "name": "Airtable - Marcar Enviado",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        640,
+        -80
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "KUhYM55QGLkYVPIh",
+          "name": "Airtable account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Airtable Trigger - Cambios de Status": {
+      "main": [
+        [
+          {
+            "node": "IF - Esta Aprobado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Esta Aprobado": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Enviar Propuesta al Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Enviar Propuesta al Cliente": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Marcar Enviado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "aed25be4-7262-4d48-b0a1-0ff28fc9a731",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aead8f1d90270919dbbd6ff988583e2d4ba7c02e2738093d3905f9f60e419d80"
+  },
+  "nodeGroups": [],
+  "id": "Mh2rGmbT4iF85cu1",
+  "tags": []
+}

@@ -1,0 +1,741 @@
+{
+  "name": "Flujo A - Generacion de Propuesta Comercial",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "authentication": "airtableOAuth2Api",
+        "baseId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tblU1d2J4s0ljUhMS/viwq2D3cVBVsdF3nI?blocks=hide",
+          "__regex": "https://airtable.com/([a-zA-Z0-9]{2,})"
+        },
+        "tableId": {
+          "__rl": true,
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tblU1d2J4s0ljUhMS/viwq2D3cVBVsdF3nI?blocks=hide",
+          "mode": "url"
+        },
+        "triggerField": "Status",
+        "additionalFields": {}
+      },
+      "id": "0576ac36-6e3a-4e43-9969-985cc285ab8f",
+      "name": "Airtable Trigger - Nuevas Solicitudes (Status=Pendiente)",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        128
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "KUhYM55QGLkYVPIh",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.fields.Nombre_Cliente }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "id": "91ddf52d-291a-4da3-b100-4b66d0698448"
+            },
+            {
+              "leftValue": "={{ $json.fields.Email_Cliente }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "id": "a4485647-70c7-40be-baad-1b80d2fb19a8"
+            },
+            {
+              "leftValue": "={{ $json.fields.Descripcion_Necesidad }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              },
+              "id": "f0d9b91e-aab8-4aa7-9ce5-be3d471c7ba2"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ccb76cbf-0262-4dad-874e-6060b76d29a5",
+      "name": "IF - Validar Campos Obligatorios",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"anthropic/claude-sonnet-4.5\",\n  \"max_tokens\": 1000,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"Genera una propuesta comercial profesional para: Cliente: {{ $('Airtable Trigger - Nuevas Solicitudes (Status=Pendiente)').item.json.fields.Nombre_Cliente }} - {{ $('Airtable Trigger - Nuevas Solicitudes (Status=Pendiente)').item.json.fields.Empresa }}. Servicio: {{ $json.fields.servicio_solicitado }}. Necesidad: {{ $json.fields.Descripcion_Necesidad }}. Presupuesto estimado: {{ $json.fields.presupuesto_estimado }}. Estructura: 1) Resumen ejecutivo 2) Diagnostico 3) Solucion propuesta 4) Alcance y entregables 5) Inversion 6) Proximos pasos. Tono profesional y persuasivo. Maximo 500 palabras.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "id": "79fa5d76-860a-4472-8195-2b44204bcceb",
+      "name": "HTTP Request - Claude Generar Propuesta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -48,
+        48
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YRhXkJz5BS7zvYDr",
+          "name": "Header Auth account"
+        }
+      },
+      "continueOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tblU1d2J4s0ljUhMS/viwq2D3cVBVsdF3nI?blocks=hide",
+          "mode": "url"
+        },
+        "table": {
+          "__rl": true,
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tblU1d2J4s0ljUhMS/viwq2D3cVBVsdF3nI?blocks=hide",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Propuesta_generada": "={{ $json.choices[0].message.content }}",
+            "id": "={{ $('Airtable Trigger - Nuevas Solicitudes (Status=Pendiente)').item.json.id }}",
+            "Status": "Pendiente aprobación"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre_Cliente",
+              "displayName": "Nombre_Cliente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Empresa",
+              "displayName": "Empresa",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Email_Cliente",
+              "displayName": "Email_Cliente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "servicio_solicitado",
+              "displayName": "servicio_solicitado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Descripcion_Necesidad",
+              "displayName": "Descripcion_Necesidad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "presupuesto_estimado",
+              "displayName": "presupuesto_estimado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendiente",
+                  "value": "Pendiente"
+                },
+                {
+                  "name": "Procesado por IA",
+                  "value": "Procesado por IA"
+                },
+                {
+                  "name": "Pendiente aprobación",
+                  "value": "Pendiente aprobación"
+                },
+                {
+                  "name": "Aprobado por humano",
+                  "value": "Aprobado por humano"
+                },
+                {
+                  "name": "Enviado/Error",
+                  "value": "Enviado/Error"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Propuesta_generada",
+              "displayName": "Propuesta_generada",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha_solicitud",
+              "displayName": "Fecha_solicitud",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "997ffe4b-544d-491c-b015-26dc6f04303f",
+      "name": "Airtable - Guardar Propuesta",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        176,
+        0
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "KUhYM55QGLkYVPIh",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=almendra.andres@gmail.com",
+        "subject": "==Propuesta lista para revisar - {{$('Airtable Trigger - Nuevas Solicitudes (Status=Pendiente)').item.json.fields.Nombre_Cliente}}",
+        "message": "=Revisar y aprobar en Airtable antes de enviar al cliente.\n\nPropuesta generada:\n{{$json.fields.Propuesta_generada}}",
+        "options": {}
+      },
+      "id": "0c6402ee-5f90-4c00-9399-f8852832ebc4",
+      "name": "Gmail - Notificar Revisor (HITL)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "webhookId": "ab08ff5b-a270-4644-9b5a-f57b5c1718d6",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qG1oin2apBabXyu5",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tblU1d2J4s0ljUhMS/viwq2D3cVBVsdF3nI?blocks=hide",
+          "mode": "url"
+        },
+        "table": {
+          "__rl": true,
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tblU1d2J4s0ljUhMS/viwq2D3cVBVsdF3nI?blocks=hide",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Status": "={{ $('Airtable Trigger - Nuevas Solicitudes (Status=Pendiente)').item.json.fields.Status }}",
+            "id": "={{ $('Airtable Trigger - Nuevas Solicitudes (Status=Pendiente)').item.json.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Nombre_Cliente",
+              "displayName": "Nombre_Cliente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Empresa",
+              "displayName": "Empresa",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Email_Cliente",
+              "displayName": "Email_Cliente",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "servicio_solicitado",
+              "displayName": "servicio_solicitado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Descripcion_Necesidad",
+              "displayName": "Descripcion_Necesidad",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "presupuesto_estimado",
+              "displayName": "presupuesto_estimado",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Pendiente",
+                  "value": "Pendiente"
+                },
+                {
+                  "name": "Procesado por IA",
+                  "value": "Procesado por IA"
+                },
+                {
+                  "name": "Pendiente aprobación",
+                  "value": "Pendiente aprobación"
+                },
+                {
+                  "name": "Aprobado por humano",
+                  "value": "Aprobado por humano"
+                },
+                {
+                  "name": "Enviado/Error",
+                  "value": "Enviado/Error"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Propuesta_generada",
+              "displayName": "Propuesta_generada",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Fecha_solicitud",
+              "displayName": "Fecha_solicitud",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f7f84e18-e7ae-43c5-85b6-4aacc6f2c99a",
+      "name": "Airtable - Marcar Error",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        160,
+        336
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "KUhYM55QGLkYVPIh",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tbli9VzaP6TAl2Cgp/viwVqbV0PpTMcl4kv?blocks=hide",
+          "mode": "url"
+        },
+        "table": {
+          "__rl": true,
+          "value": "https://airtable.com/appk7F3Ogd0HaVpx8/tbli9VzaP6TAl2Cgp/viwVqbV0PpTMcl4kv?blocks=hide",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Solicitud": "=={{ $('Airtable Trigger - Nuevas Solicitudes (Status=Pendiente)').item.json.id }}",
+            "Nodo_Fallido": "IF Validar Campos o HTTP Request Claude",
+            "Mensaje_Error": "Faltan campos obligatorios o fallo la llamada a la API de IA"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Solicitud",
+              "displayName": "Solicitud",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Nodo_Fallido",
+              "displayName": "Nodo_Fallido",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Mensaje_Error",
+              "displayName": "Mensaje_Error",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Fecha",
+              "displayName": "Fecha",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "id": "e02d9e63-30ac-4f9e-9926-a803698ff76d",
+      "name": "Airtable - Log de Error",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        400,
+        336
+      ],
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "KUhYM55QGLkYVPIh",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=almendra.andres@gmail.com",
+        "subject": "==Error en solicitud - {{$('Airtable Trigger - Nuevas Solicitudes (Status=Pendiente)').item.json.fields.Nombre_Cliente}}",
+        "message": "Se registro un error procesando la solicitud. Revisar tabla Log_Errores en Airtable.",
+        "options": {}
+      },
+      "id": "348d9282-8ab3-4374-bb7e-c30b119325ee",
+      "name": "Gmail - Alertar Administrador",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [
+        640,
+        336
+      ],
+      "webhookId": "95f36baa-29b2-4760-bc8f-ab171680e7a1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "qG1oin2apBabXyu5",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Airtable Trigger - Nuevas Solicitudes (Status=Pendiente)": [
+      {
+        "json": {
+          "id": "recHRFF7M1G5XntIq",
+          "createdTime": "2026-07-26T20:34:55.000Z",
+          "fields": {
+            "Status": "Pendiente aprobación",
+            "Propuesta_generada": "# PROPUESTA COMERCIAL DE SERVICIOS DE LIMPIEZA\n\n**Para:** Andrés - Mega  \n**Fecha:** [Fecha actual]  \n**Referencia:** Servicios Profesionales de Limpieza\n\n---\n\n## 1. RESUMEN EJECUTIVO\n\nPresentamos una solución integral de limpieza diseñada específicamente para Mega, optimizando sus estándares de higiene y presentación. Nuestra propuesta combina tecnología, personal capacitado y protocolos especializados que garantizan ambientes impecables y saludables.\n\n## 2. DIAGNÓSTICO\n\nHemos identificado que Mega requiere servicios de limpieza que mantengan estándares superiores en todas sus instalaciones. La operación actual demanda soluciones que integren eficiencia, consistencia y protocolos modernos de higienización. Reconocemos la necesidad de un proveedor confiable que comprenda la importancia de mantener espacios impecables para el óptimo funcionamiento de sus operaciones y la imagen corporativa de excelencia que Mega proyecta.\n\n## 3. SOLUCIÓN PROPUESTA\n\nOfrecemos un **Programa de Limpieza Profesional 360°** que incluye:\n\n- **Personal especializado y supervisado** con certificación en protocolos de limpieza industrial\n- **Tecnología de última generación**: equipos especializados y productos biodegradables de alta efectividad\n- **Programa personalizado** ajustado a horarios y necesidades específicas de Mega\n- **Sistema de control de calidad** con auditorías semanales y reportes digitales\n- **Respaldo 24/7** para atención de requerimientos urgentes\n\n## 4. ALCANCE Y ENTREGABLES\n\n**Cobertura:**\n- Limpieza diaria de áreas operativas, administrativas y comunes\n- Sanitización profunda de baños y áreas críticas\n- Mantenimiento de pisos, ventanas y superficies\n- Gestión integral de residuos\n\n**Entregables:**\n- Cronograma detallado de actividades\n- Reportes mensuales de gestión con indicadores\n- Certificados de productos utilizados\n- Plan de contingencias y mejora continua\n\n## 5. INVERSIÓN\n\n**Inversión mensual:** $500,000 pesos\n\nEste valor incluye personal, insumos, equipos, supervisión y seguros de responsabilidad civil. Ofrecemos la mejor relación costo-beneficio del mercado con garantía de resultados.\n\n**Facilidades de pago:** Facturación mensual con opciones de descuento por contratación anual.\n\n## 6. PRÓXIMOS PASOS\n\n1. **Reunión de alineación** para validar requerimientos específicos (Semana 1)\n2. **Visita técnica** a instalaciones para planificación operativa (Semana 1)\n3. **Firma de contrato** y definición de fecha de inicio (Semana 2)\n4. **Implementación y arranque** del servicio (Semana 3)\n\n---\n\n**Validez de la propuesta:** 15 días calendario\n\nAndrés, estamos comprometidos en convertirnos en su aliado estratégico en limpieza. Nuestra experiencia y profesionalismo garantizan que Mega cuente con ambientes impecables que reflejen la calidad de su organización.\n\nQuedamos atentos a sus comentarios para concretar esta alianza.\n\n**Atentamente,**  \n[Nombre y firma]  \n[Cargo]  \n[Datos de contacto]",
+            "Descripcion_Necesidad": "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since 1966, when designers at Letraset and James Mosley, the librarian at St Bride Printing Library in London, took a 1914 Cicero translation and scrambled it to make dummy text for Letraset's Body Type sheets. It has survived not only many decades, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised thanks to these sheets and more recently with desktop publishing software like Aldus PageMaker and Microsoft Word including versions of Lorem Ipsum.",
+            "Email_Cliente": "andres@gmail.com",
+            "servicio_solicitado": "Limpieza",
+            "presupuesto_estimado": 500000,
+            "Fecha_solicitud": "2026-07-26T20:34:55.000Z",
+            "Nombre_Cliente": "Andres",
+            "Empresa": "Mega"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Airtable Trigger - Nuevas Solicitudes (Status=Pendiente)": {
+      "main": [
+        [
+          {
+            "node": "IF - Validar Campos Obligatorios",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF - Validar Campos Obligatorios": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Claude Generar Propuesta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable - Marcar Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Claude Generar Propuesta": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Guardar Propuesta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Airtable - Marcar Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Guardar Propuesta": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Notificar Revisor (HITL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Marcar Error": {
+      "main": [
+        [
+          {
+            "node": "Airtable - Log de Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable - Log de Error": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Alertar Administrador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "32e8bae2-2dbf-4306-a114-3ce5207ffd54",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "aead8f1d90270919dbbd6ff988583e2d4ba7c02e2738093d3905f9f60e419d80"
+  },
+  "nodeGroups": [],
+  "id": "VRcuD7K1nl4Z9VnB",
+  "tags": []
+}
